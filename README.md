@@ -91,6 +91,12 @@ python -m simple-evals.demo
 ```
 This will launch evaluations through the OpenAI API.
 
+## Single Evaluation Run
+```bash
+python -m simple-evals.single-run -t <enable_test_run> -m <model_name> -o <output_dir>
+```
+This will launch GPQA evaluation for a selected model.
+
 ## Notes
 
 [^1]:chatgpt system message: "You are ChatGPT, a large language model trained by OpenAI, based on the GPT-4 architecture.\nKnowledge cutoff: 2023-12\nCurrent date: 2024-04-01"
