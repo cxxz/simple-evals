@@ -9,6 +9,8 @@ from tqdm import tqdm
 
 from .types import EvalResult, Message, SamplerBase, SingleEvalResult
 
+SIMPLE_GPQA_SYS_MSG = "Always think like a top scientist."
+
 QUERY_TEMPLATE_MULTICHOICE = """
 Answer the following multiple choice question. The last line of your response should be of the following format: 'Answer: $LETTER' (without quotes) where LETTER is one of ABCD. Think step by step before answering.
 
@@ -181,6 +183,10 @@ def aggregate_results(
     name2values = defaultdict(list)
     htmls = []
     convos = []
+    scores = []
+    corret_answers = []
+    extracted_answers = []
+
     for single_eval_result in single_eval_results:
         for name, value in single_eval_result.metrics.items():
             name2values[name].append(value)
@@ -188,6 +194,10 @@ def aggregate_results(
             name2values["score"].append(single_eval_result.score)
         htmls.append(single_eval_result.html)
         convos.append(single_eval_result.convo)
+        scores.append(single_eval_result.score)
+        corret_answers.append(single_eval_result.correct_answer)
+        extracted_answers.append(single_eval_result.extracted_answer)
+
     final_metrics = {}
     for name, values in name2values.items():
         stats = name2stats.get(name, default_stats)
@@ -195,11 +205,11 @@ def aggregate_results(
             key = name if stat == "mean" else f"{name}:{stat}"
             final_metrics[key] = _compute_stat(values, stat)
     return EvalResult(
-        score=final_metrics.pop("score", None), metrics=final_metrics, htmls=htmls, convos=convos
+        score=final_metrics.pop("score", None), metrics=final_metrics, htmls=htmls, convos=convos, scores=scores, correct_answers=corret_answers, extracted_answers=extracted_answers
     )
 
 
-def map_with_progress(f: callable, xs: list[Any], num_threads: int = 50):
+def map_with_progress(f: callable, xs: list[Any], num_threads: int = 8):
     """
     Apply f to each element of xs, using a ThreadPool, and show progress.
     """

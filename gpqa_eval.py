@@ -9,6 +9,7 @@ import re
 
 import blobfile as bf
 import pandas
+from datasets import load_dataset
 
 from . import common
 from .common import ANSWER_PATTERN_MULTICHOICE, HTML_JINJA, format_multichoice_question
@@ -21,14 +22,16 @@ class GPQAEval(Eval):
         n_repeats: int = 4,
         variant: str = "diamond",
         num_examples: int | None = None,  # restrict to a subset of the data for debugging
+        domain: str | None = None,
     ):
-        df = pandas.read_csv(
-            bf.BlobFile(f"https://openaipublic.blob.core.windows.net/simple-evals/gpqa_{variant}.csv")
-        )
+        dataset = load_dataset("idavidrein/gpqa", f"gpqa_{variant}")
+        df = dataset["train"].to_pandas()
+        if domain is not None:
+            df = df[df.Subdomain == domain]
         examples = [row.to_dict() for _, row in df.iterrows()]
+        rng = random.Random(0)
         if num_examples:
             assert n_repeats == 1, "n_repeats only supported for num_examples = None"
-            rng = random.Random(0)
             examples = rng.sample(examples, num_examples)
         examples = examples * n_repeats
         examples = [example | {"permutation": rng.sample(range(4), 4)} for example in examples]
@@ -67,8 +70,9 @@ class GPQAEval(Eval):
             )
             convo = prompt_messages + [dict(content=response_text, role="assistant")]
             return SingleEvalResult(
-                html=html, score=score, convo=convo, metrics={"chars": len(response_text)}
+                html=html, score=score, convo=convo, metrics={"chars": len(response_text)}, correct_answer=correct_answer, extracted_answer=extracted_answer
             )
 
         results = common.map_with_progress(fn, self.examples)
+
         return common.aggregate_results(results)
