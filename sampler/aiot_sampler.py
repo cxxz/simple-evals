@@ -76,7 +76,7 @@ class AIOTSampler(SamplerBase):
 
     def __call__(self, message_list: MessageList) -> str:
         prompt = message_list[0]['content']
-        print(prompt)
+        # print(prompt)
         try:
             result = self.agent.run(prompt)
             response_text = get_full_response_text(result)

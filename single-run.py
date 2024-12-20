@@ -6,7 +6,6 @@ from pathlib import Path
 from typing import Dict, Any, List
 
 import pandas as pd
-from dotenv import load_dotenv
 
 # Import local modules
 from .common import make_report, SIMPLE_GPQA_SYS_MSG, REFLECTION_SYS_MSG
@@ -21,11 +20,9 @@ from .sampler.chat_completion_sampler import (
     ChatCompletionSampler,
 )
 from .sampler.o1_chat_completion_sampler import O1ChatCompletionSampler
+from .sampler.gemini_sampler import GeminiSampler
 from .sampler.aiot_sampler import AIOTSampler
 from .sampler.bedrock_sampler import ClaudeChatCompletionSampler, CLAUDE_SYSTEM_MESSAGE_LMSYS
-
-# Load environment variables
-load_dotenv()
 
 
 def setup_logging(debug: bool) -> None:
@@ -121,6 +118,11 @@ def get_samplers() -> Dict[str, Any]:
             model="anthropic.claude-3-5-sonnet-20241022-v2:0",
             system_message=SIMPLE_GPQA_SYS_MSG,
             max_tokens=4096,
+        ),
+        # Gemini models
+        "gemini-exp-1206": GeminiSampler(
+            model_name="gemini-exp-1206",
+            max_tokens=8192,
         ),
         # on-prem models
         "llama-3.1-405b-instruct": ChatCompletionSampler(

@@ -72,7 +72,8 @@ C) {C}
 D) {D}
 """.strip()
 
-ANSWER_PATTERN_MULTICHOICE = r"(?i)Answer\s*:\s*([A-D])"
+# ANSWER_PATTERN_MULTICHOICE = r"(?i)Answer\s*:\s*([A-D])"
+ANSWER_PATTERN_MULTICHOICE = r"(?i)\**\s*Answer\s*\**:\**\s*([A-D])"
 ANSWER_PATTERN = r"(?i)Answer\s*:\s*([^\n]+)"
 MULTILINGUAL_ANSWER_PATTERN_TEMPLATE = (
     "(?i){}\s*([A-D]|[أ-د]|[অ]|[ব]|[ড]|[ঢ]|[Ａ]|[Ｂ]|[Ｃ]|[Ｄ])"
@@ -198,10 +199,10 @@ HTML_JINJA = """
 """
 
 
-def format_multichoice_question(row, template=AIOT_MCQ_TEMPLATE):
+def format_multichoice_question(row, template=QUERY_TEMPLATE_MULTICHOICE):
     return template.format(**row)
     # return REFLECTION_MCQ_TEMPLATE.format(**row)
-    #return QUERY_TEMPLATE_MULTICHOICE.format(**row)
+    # return QUERY_TEMPLATE_MULTICHOICE.format(**row)
 
 
 def check_equality(sampler: SamplerBase, expr1: str, expr2: str):
