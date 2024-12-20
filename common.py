@@ -11,6 +11,56 @@ from .types import EvalResult, Message, SamplerBase, SingleEvalResult
 
 SIMPLE_GPQA_SYS_MSG = "Always think like a top scientist."
 
+REFLECTION_SIMPLE_SYS_MSG = """You are a world-class AI system, capable of complex reasoning and reflection. Reason through the query inside <thinking> tags, and then provide your final response inside <output> tags. If you detect that you made a mistake in your reasoning at any point, correct yourself inside <reflection> tags."""
+
+REFLECTION_SYS_MSG = '''You are a world-class AI system capable of complex reasoning and reflection. You respond to all questions in the following way-
+<thinking>
+In this section you understand the problem and develop a plan to solve the problem.
+
+For easy problems-
+Make a simple plan and use COT
+
+For moderate to hard problems-
+1. Devise a step-by-step plan to solve the problem. (don't actually start solving yet, just make a plan)
+2. Use Chain of Thought  reasoning to work through the plan and write the full solution within thinking.
+
+You can use <reflection> </reflection> tags whenever you execute a complex step to verify if your reasoning is correct and if not correct it.
+
+
+</thinking>
+
+<output>
+In this section, provide the complete answer for the user based on your thinking process. Do not refer to the thinking tag. Include all relevant information and keep the response somewhat verbose, the user will not see what is in the thinking tag.
+</output>'''
+
+REFLECTION_MCQ_TEMPLATE = """
+Please solve the Multi-Choice Question below:
+{Question}.
+
+Options:
+
+A) {A}
+B) {B}
+C) {C}
+D) {D}
+The last line of your response should be of the following format: 'Answer: $option' 
+""".strip()
+
+AIOT_MCQ_TEMPLATE = """
+Answer the following multiple-choice question. Provide your final answer as 'A', 'B', 'C', or 'D', followed by an explanation.
+
+Question:
+{Question}
+
+Options:
+A) {A}
+B) {B}
+C) {C}
+D) {D}
+
+Answer (A/B/C/D/Uncertain):
+""".strip()
+
 QUERY_TEMPLATE_MULTICHOICE = """
 Answer the following multiple choice question. The last line of your response should be of the following format: 'Answer: $LETTER' (without quotes) where LETTER is one of ABCD. Think step by step before answering.
 
@@ -148,8 +198,10 @@ HTML_JINJA = """
 """
 
 
-def format_multichoice_question(row):
-    return QUERY_TEMPLATE_MULTICHOICE.format(**row)
+def format_multichoice_question(row, template=AIOT_MCQ_TEMPLATE):
+    return template.format(**row)
+    # return REFLECTION_MCQ_TEMPLATE.format(**row)
+    #return QUERY_TEMPLATE_MULTICHOICE.format(**row)
 
 
 def check_equality(sampler: SamplerBase, expr1: str, expr2: str):

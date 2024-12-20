@@ -9,7 +9,7 @@ import pandas as pd
 from dotenv import load_dotenv
 
 # Import local modules
-from .common import make_report, SIMPLE_GPQA_SYS_MSG
+from .common import make_report, SIMPLE_GPQA_SYS_MSG, REFLECTION_SYS_MSG
 from .drop_eval import DropEval
 from .gpqa_eval import GPQAEval
 from .math_eval import MathEval
@@ -21,6 +21,7 @@ from .sampler.chat_completion_sampler import (
     ChatCompletionSampler,
 )
 from .sampler.o1_chat_completion_sampler import O1ChatCompletionSampler
+from .sampler.aiot_sampler import AIOTSampler
 from .sampler.bedrock_sampler import ClaudeChatCompletionSampler, CLAUDE_SYSTEM_MESSAGE_LMSYS
 
 # Load environment variables
@@ -124,8 +125,13 @@ def get_samplers() -> Dict[str, Any]:
         # on-prem models
         "llama-3.1-405b-instruct": ChatCompletionSampler(
             model="Meta-Llama-3.1-405B-Instruct-AWQ-INT4",
-            system_message=SIMPLE_GPQA_SYS_MSG,
-            max_tokens=4096,
+            system_message=REFLECTION_SYS_MSG,
+            max_tokens=8192,
+        ),
+        # on-prem models
+        "aiot-llama-3.1-405b-instruct": AIOTSampler(
+            model="Meta-Llama-3.1-405B-Instruct-AWQ-INT4",
+            max_tokens=8192,
         ),
     }
 
