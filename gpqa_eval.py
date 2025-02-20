@@ -21,6 +21,8 @@ class GPQAEval(Eval):
         self,
         n_repeats: int = 4,
         variant: str = "diamond",
+        rng_seed: int = 17,
+        num_threads: int = 6,
         num_examples: int | None = None,  # restrict to a subset of the data for debugging
         domain: str | None = None,
     ):
@@ -29,13 +31,14 @@ class GPQAEval(Eval):
         if domain is not None:
             df = df[df.Subdomain == domain]
         examples = [row.to_dict() for _, row in df.iterrows()]
-        rng = random.Random(0)
+        rng = random.Random(rng_seed)
         if num_examples:
             assert n_repeats == 1, "n_repeats only supported for num_examples = None"
             examples = rng.sample(examples, num_examples)
         examples = examples * n_repeats
         examples = [example | {"permutation": rng.sample(range(4), 4)} for example in examples]
         self.examples = examples
+        self.num_threads = num_threads
         self.n_repeats = n_repeats
 
     def __call__(self, sampler: SamplerBase) -> EvalResult:
@@ -73,6 +76,6 @@ class GPQAEval(Eval):
                 html=html, score=score, convo=convo, metrics={"chars": len(response_text)}, correct_answer=correct_answer, extracted_answer=extracted_answer
             )
 
-        results = common.map_with_progress(fn, self.examples)
+        results = common.map_with_progress(fn, self.examples, num_threads=self.num_threads)
 
         return common.aggregate_results(results)

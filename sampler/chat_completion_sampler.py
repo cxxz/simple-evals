@@ -3,7 +3,7 @@ import time
 from typing import Any
 
 import openai
-from openai import OpenAI
+from openai import OpenAI, AzureOpenAI
 
 from ..types import MessageList, SamplerBase
 
@@ -24,14 +24,22 @@ class ChatCompletionSampler(SamplerBase):
         model: str = "gpt-3.5-turbo",
         system_message: str | None = None,
         temperature: float = 0.5,
+        top_p: float = 1.0,
         max_tokens: int = 1024,
+        timeout: int = 120,
+        provider: str = "openai",
     ):
         self.api_key_name = "OPENAI_API_KEY"
-        self.client = OpenAI()
+        self.timeout = timeout
+        if provider == "azure":
+            self.client = AzureOpenAI(timeout=timeout)
+        else:
+            self.client = OpenAI(timeout=timeout)
         # using api_key=os.environ.get("OPENAI_API_KEY")  # please set your API_KEY
         self.model = model
         self.system_message = system_message
         self.temperature = temperature
+        self.top_p = top_p
         self.max_tokens = max_tokens
         self.image_format = "url"
 
@@ -63,6 +71,7 @@ class ChatCompletionSampler(SamplerBase):
                     messages=message_list,
                     temperature=self.temperature,
                     max_tokens=self.max_tokens,
+                    top_p=self.top_p,
                 )
                 return response.choices[0].message.content
             # NOTE: BadRequestError is triggered once for MMMU, please uncomment if you are reruning MMMU

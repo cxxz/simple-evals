@@ -135,6 +135,19 @@ def get_samplers() -> Dict[str, Any]:
             model="Meta-Llama-3.1-405B-Instruct-AWQ-INT4",
             max_tokens=8192,
         ),
+        "deepseek-r1": ChatCompletionSampler(
+            model="DeepSeek-R1-AWQ",
+            max_tokens=28000,
+            temperature=0.6,
+            top_p=0.95,
+            timeout=1800,
+        ),
+        "gpt-4o-2024-11-20": ChatCompletionSampler(
+            model="gpt-4o",
+            system_message=OPENAI_SYSTEM_MESSAGE_API,
+            max_tokens=4096,
+            provider="azure"
+        ),
     }
 
 
@@ -167,7 +180,11 @@ def get_evaluator(eval_name: str, test_run: bool, equality_checker: Any) -> Any:
             )
         case "gpqa":
             return GPQAEval(
-                n_repeats=1 if test_run else 1, num_examples=num_examples_map["gpqa"]
+                n_repeats=1 if test_run else 1, 
+                num_examples=num_examples_map["gpqa"],
+                variant="extended",
+                rng_seed=42,
+                num_threads=6,
             )
         case "mgsm":
             return MGSMEval(num_examples_per_lang=num_examples_map["mgsm"])
