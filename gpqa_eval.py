@@ -64,8 +64,17 @@ class GPQAEval(Eval):
                 response = sampler(prompt_messages)
             except Exception as e:
                 print(f"Error in sampler: {e}")
-                return None
-            # Check if the response is a 
+                # Return a default result instead of None
+                return SingleEvalResult(
+                    html="<p>Error: Sampler failed</p>",
+                    score=0.0,
+                    convo=prompt_messages + [dict(content="Error: Sampler failed", role="assistant")],
+                    metrics={"chars": 0, "tokens": 0},
+                    correct_answer=correct_answer,
+                    extracted_answer=None
+                )
+            
+            # Check if the response is a tuple
             if isinstance(response, tuple):
                 response_text, response_token_count = response
             elif isinstance(response, str):
@@ -73,6 +82,18 @@ class GPQAEval(Eval):
                 response_token_count = 0
             else:
                 raise ValueError(f"Unexpected response type: {type(response)}")
+            
+            if response_text is None:
+                # Handle the case where the response is None
+                print("Warning!!! Response is None")
+                return SingleEvalResult(
+                    html="<p>Error: Response is None</p>",
+                    score=0.0,
+                    convo=prompt_messages + [dict(content="Response is None", role="assistant")],
+                    metrics={"chars": 0, "tokens": 0},
+                    correct_answer=correct_answer,
+                    extracted_answer=None
+                )
             match = re.search(ANSWER_PATTERN_MULTICHOICE, response_text)
             extracted_answer = match.group(1) if match else None
             score = 1.0 if extracted_answer == correct_answer else 0.0
