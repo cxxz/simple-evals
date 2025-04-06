@@ -4,29 +4,20 @@ from anthropic import AnthropicBedrock, RateLimitError
 
 from ..types import MessageList, SamplerBase
 
-CLAUDE_SYSTEM_MESSAGE_LMSYS = (
-    "The assistant is Claude, created by Anthropic. The current date is "
-    "{currentDateTime}. Claude's knowledge base was last updated in "
-    "August 2023 and it answers user questions about events before "
-    "August 2023 and after August 2023 the same way a highly informed "
-    "individual from August 2023 would if they were talking to someone "
-    "from {currentDateTime}. It should give provide thorough responses "
-    "to complex and open-ended questions. "
-).format(currentDateTime="2024-04-01")
-# reference: https://github.com/lm-sys/FastChat/blob/7899355ebe32117fdae83985cf8ee476d2f4243f/fastchat/conversation.py#L894
-
-
-class ClaudeChatCompletionSampler(SamplerBase):
+class BedrockCompletionSampler(SamplerBase):
     """
     Sample from Claude API
     """
 
     def __init__(
         self,
-        model: str = "anthropic.claude-3-5-sonnet-20241022-v2:0",
+        model: str = "us.anthropic.claude-3-7-sonnet-20250219-v1:0",
         system_message: str | None = None,
         temperature: float = 1.0,  # default in Anthropic example
+        enable_extended_thinking: bool = False,
+        budget_tokens: int = 4096,
         max_tokens: int = 4096,
+        max_retries: int = 3,
     ):
         self.api_key_name = "ANTHROPIC_API_KEY"
         aws_region = os.environ.get("AWS_REGION", None)
@@ -36,7 +27,11 @@ class ClaudeChatCompletionSampler(SamplerBase):
         self.model = model
         self.system_message = system_message
         self.temperature = temperature
+        self.extended_thinking = enable_extended_thinking
+        self.budget_tokens = budget_tokens
         self.max_tokens = max_tokens
+        self.max_retries = max_retries
+
         self.image_format = "base64"
 
     def _handle_image(
@@ -60,16 +55,26 @@ class ClaudeChatCompletionSampler(SamplerBase):
 
     def __call__(self, message_list: MessageList) -> str:
         trial = 0
-        while True:
+        thinking_params = {"type": "disabled"} if not self.extended_thinking else {
+            "type": "enabled",
+            "budget_tokens": self.budget_tokens
+        }
+        while trial < self.max_retries:
             try:
-                message = self.client.messages.create(
+                response = self.client.messages.create(
                     model=self.model,
                     system=self.system_message,
                     max_tokens=self.max_tokens,
                     temperature=self.temperature,
                     messages=message_list,
+                    thinking=thinking_params,
                 )
-                return message.content[0].text
+                if self.extended_thinking:
+                    thought_process = response.content[0].thinking
+                    full_response_text = f"<think>\n\n{thought_process}</think>\n{response.content[1].text}"
+                else:
+                    full_response_text = response.content[0].text
+                return full_response_text, response.usage.output_tokens
             except RateLimitError as e:
                 exception_backoff = 2**trial  # expontial back off
                 print(

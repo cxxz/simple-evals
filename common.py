@@ -9,10 +9,6 @@ from tqdm import tqdm
 
 from .types import EvalResult, Message, SamplerBase, SingleEvalResult
 
-SIMPLE_GPQA_SYS_MSG = "Always think like a top scientist."
-
-REFLECTION_SIMPLE_SYS_MSG = """You are a world-class AI system, capable of complex reasoning and reflection. Reason through the query inside <thinking> tags, and then provide your final response inside <output> tags. If you detect that you made a mistake in your reasoning at any point, correct yourself inside <reflection> tags."""
-
 REFLECTION_SYS_MSG = '''You are a world-class AI system capable of complex reasoning and reflection. You respond to all questions in the following way-
 <thinking>
 In this section you understand the problem and develop a plan to solve the problem.
@@ -62,7 +58,7 @@ Answer (A/B/C/D/Uncertain):
 """.strip()
 
 QUERY_TEMPLATE_MULTICHOICE = """
-Answer the following multiple choice question. The last line of your response should be of the following format: 'Answer: $LETTER' (without quotes) where LETTER is one of ABCD. Think step by step before answering.
+Answer the following multiple choice question. The last line of your response should be of the following format: 'Answer: <LETTER>' (without quotes) where <LETTER> is one of ABCD. Think step by step before answering.
 
 {Question}
 
@@ -241,6 +237,8 @@ def aggregate_results(
     extracted_answers = []
 
     for single_eval_result in single_eval_results:
+        if single_eval_result is None:
+            continue
         for name, value in single_eval_result.metrics.items():
             name2values[name].append(value)
         if single_eval_result.score is not None:

@@ -60,7 +60,19 @@ class GPQAEval(Eval):
                     content=format_multichoice_question(choices_dict), role="user"
                 )
             ]
-            response_text = sampler(prompt_messages)
+            try:
+                response = sampler(prompt_messages)
+            except Exception as e:
+                print(f"Error in sampler: {e}")
+                return None
+            # Check if the response is a 
+            if isinstance(response, tuple):
+                response_text, response_token_count = response
+            elif isinstance(response, str):
+                response_text = response
+                response_token_count = 0
+            else:
+                raise ValueError(f"Unexpected response type: {type(response)}")
             match = re.search(ANSWER_PATTERN_MULTICHOICE, response_text)
             extracted_answer = match.group(1) if match else None
             score = 1.0 if extracted_answer == correct_answer else 0.0
@@ -72,8 +84,19 @@ class GPQAEval(Eval):
                 extracted_answer=extracted_answer,
             )
             convo = prompt_messages + [dict(content=response_text, role="assistant")]
+            if response_token_count > 0:
+                # If the response is a tuple, we have the token count
+                convo[-1]["token_count"] = response_token_count
             return SingleEvalResult(
-                html=html, score=score, convo=convo, metrics={"chars": len(response_text)}, correct_answer=correct_answer, extracted_answer=extracted_answer
+                html=html,
+                score=score,
+                convo=convo,
+                metrics={
+                    "chars": len(response_text),
+                    "tokens": response_token_count,
+                    },
+                correct_answer=correct_answer,
+                extracted_answer=extracted_answer
             )
 
         results = common.map_with_progress(fn, self.examples, num_threads=self.num_threads)

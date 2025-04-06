@@ -1,5 +1,6 @@
 import base64
 import time
+import os
 from typing import Any
 
 import openai
@@ -29,13 +30,36 @@ class ChatCompletionSampler(SamplerBase):
         timeout: int = 120,
         provider: str = "openai",
     ):
-        self.api_key_name = "OPENAI_API_KEY"
         self.timeout = timeout
         if provider == "azure":
             self.client = AzureOpenAI(timeout=timeout)
+        elif provider == "openai":
+            self.api_key_name = "SE_OAI_API_KEY"
+            api_key = os.environ.get(self.api_key_name)
+            if not api_key:
+                raise ValueError(
+                    f"Please set {self.api_key_name} environment variable"
+                )
+            self.client = OpenAI(
+                api_key=api_key,
+                timeout=timeout)
+        elif provider == "custom":
+            self.api_key_name = "SE_CUSTOM_API_KEY"
+            api_key = os.environ.get(self.api_key_name)
+            base_url = os.environ.get("SE_CUSTOM_API_BASE")
+            if not api_key or not base_url:
+                raise ValueError(
+                    f"Please set {self.api_key_name} and SE_CUSTOM_API_BASE environment variables"
+                )
+            self.client = OpenAI(
+                api_key=api_key,
+                base_url=base_url, 
+                timeout=timeout)
         else:
-            self.client = OpenAI(timeout=timeout)
-        # using api_key=os.environ.get("OPENAI_API_KEY")  # please set your API_KEY
+            raise ValueError(
+                f"Invalid provider '{provider}'. Please use 'openai', 'azure', or 'custom'."
+            )
+
         self.model = model
         self.system_message = system_message
         self.temperature = temperature
@@ -73,7 +97,7 @@ class ChatCompletionSampler(SamplerBase):
                     max_tokens=self.max_tokens,
                     top_p=self.top_p,
                 )
-                return response.choices[0].message.content
+                return response.choices[0].message.content, response.usage.completion_tokens
             # NOTE: BadRequestError is triggered once for MMMU, please uncomment if you are reruning MMMU
             except openai.BadRequestError as e:
                 print("Bad Request Error", e)

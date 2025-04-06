@@ -2,13 +2,14 @@ import argparse
 import json
 import logging
 import datetime
+import yaml
 from pathlib import Path
 from typing import Dict, Any, List
 
 import pandas as pd
 
 # Import local modules
-from .common import make_report, SIMPLE_GPQA_SYS_MSG, REFLECTION_SYS_MSG
+from .common import make_report
 from .drop_eval import DropEval
 from .gpqa_eval import GPQAEval
 from .math_eval import MathEval
@@ -19,11 +20,10 @@ from .sampler.chat_completion_sampler import (
     OPENAI_SYSTEM_MESSAGE_CHATGPT,
     ChatCompletionSampler,
 )
-from .sampler.o1_chat_completion_sampler import O1ChatCompletionSampler
+from .sampler.o_chat_completion_sampler import OChatCompletionSampler
 from .sampler.gemini_sampler import GeminiSampler
 from .sampler.aiot_sampler import AIOTSampler
-from .sampler.bedrock_sampler import ClaudeChatCompletionSampler, CLAUDE_SYSTEM_MESSAGE_LMSYS
-
+from .sampler.bedrock_sampler import BedrockCompletionSampler
 
 def setup_logging(debug: bool) -> None:
     """
@@ -38,7 +38,6 @@ def setup_logging(debug: bool) -> None:
         format="%(asctime)s [%(levelname)s] %(message)s",
         datefmt="%Y-%m-%d %H:%M:%S",
     )
-
 
 def parse_arguments() -> argparse.Namespace:
     """
@@ -66,8 +65,22 @@ def parse_arguments() -> argparse.Namespace:
         "-m",
         "--model",
         type=str,
-        default="claude-3-5-sonnet-20241022",
-        help='Specify the model to use (default: "claude-3-5-sonnet-20241022")',
+        default="claude-3-7-sonnet",
+        help='Specify the model to use (default: "claude-3-7-sonnet")',
+    )
+    parser.add_argument(
+        "-p",
+        "--parallel",
+        type=int,
+        default=8,
+        help='Number of parallel processes to use (default: 8)',
+    )
+    parser.add_argument(
+        "-s",
+        "--sampler-config",
+        type=Path,
+        default=Path("./simple-evals/sampler.yaml"),
+        help='Path to the sampler configuration file (default: "./sampler.yaml")',
     )
     parser.add_argument(
         "-o",
@@ -78,86 +91,61 @@ def parse_arguments() -> argparse.Namespace:
     )
     return parser.parse_args()
 
-
-def get_samplers() -> Dict[str, Any]:
+def get_sampler(model_name: str, config_path: Path) -> Any:
     """
-    Initializes and returns a dictionary of sampler instances.
+    Returns a sampler instance based on the model name.
+
+    Args:
+        model_name (str): Name of the model.
 
     Returns:
-        Dict[str, Any]: Dictionary mapping sampler names to sampler instances.
+        Any: An instance of the sampler.
     """
-    return {
-        # ChatGPT models
-        "o1-preview": O1ChatCompletionSampler(model="o1-preview"),
-        "o1-mini": O1ChatCompletionSampler(model="o1-mini"),
-        "gpt-4-turbo-2024-04-09_assistant": ChatCompletionSampler(
-            model="gpt-4-turbo-2024-04-09",
-            system_message=OPENAI_SYSTEM_MESSAGE_API,
-        ),
-        "gpt-4-turbo-2024-04-09_chatgpt": ChatCompletionSampler(
-            model="gpt-4-turbo-2024-04-09",
-            system_message=OPENAI_SYSTEM_MESSAGE_CHATGPT,
-        ),
-        "gpt-4o_assistant": ChatCompletionSampler(
-            model="gpt-4o",
-            system_message=OPENAI_SYSTEM_MESSAGE_API,
-            max_tokens=4096,
-        ),
-        "gpt-4o_chatgpt": ChatCompletionSampler(
-            model="gpt-4o",
-            system_message=OPENAI_SYSTEM_MESSAGE_CHATGPT,
-            max_tokens=4096,
-        ),
-        "gpt-4o-mini-2024-07-18": ChatCompletionSampler(
-            model="gpt-4o-mini-2024-07-18",
-            system_message=OPENAI_SYSTEM_MESSAGE_API,
-            max_tokens=4096,
-        ),
-        # Claude models
-        "claude-3-5-sonnet-20241022": ClaudeChatCompletionSampler(
-            model="anthropic.claude-3-5-sonnet-20241022-v2:0",
-            system_message=SIMPLE_GPQA_SYS_MSG,
-            max_tokens=4096,
-        ),
-        # Gemini models
-        "gemini-exp-1206": GeminiSampler(
-            model_name="gemini-exp-1206",
-            max_tokens=8192,
-        ),
-        # on-prem models
-        "llama-3.1-405b-instruct": ChatCompletionSampler(
-            model="Meta-Llama-3.1-405B-Instruct-AWQ-INT4",
-            system_message=REFLECTION_SYS_MSG,
-            max_tokens=8192,
-        ),
-        # on-prem models
-        "aiot-llama-3.1-405b-instruct": AIOTSampler(
-            model="Meta-Llama-3.1-405B-Instruct-AWQ-INT4",
-            max_tokens=8192,
-        ),
-        "deepseek-r1": ChatCompletionSampler(
-            model="DeepSeek-R1-AWQ",
-            max_tokens=28000,
-            temperature=0.6,
-            top_p=0.95,
-            timeout=1800,
-        ),
-        "gpt-4o-2024-11-20": ChatCompletionSampler(
-            model="gpt-4o",
-            system_message=OPENAI_SYSTEM_MESSAGE_API,
-            max_tokens=4096,
-            provider="azure"
-        ),
-    }
 
+    # Get the path to the sampler config file, using environment variable or default
+    
+    try:
+        with open(config_path, "r") as file:
+            config = yaml.safe_load(file)
+    except Exception as e:
+        logging.error(f"Failed to load sampler configuration from {config_path}: {e}")
+        raise
 
-def get_evaluator(eval_name: str, test_run: bool, equality_checker: Any) -> Any:
+    # Get model-specific configuration
+    model_config = config.get(model_name)
+    if not model_config:
+        raise ValueError(f"Model '{model_name}' not found in configuration.")
+
+    sampler_type = model_config.get("sampler_type")
+    params = model_config.get("params", {})
+
+    # Process system message references if present
+    if "system_message" in params and params["system_message"] in config.get("system_messages", {}):
+        # Replace system message reference with actual message
+        sys_msg_key = params["system_message"]
+        params["system_message"] = config["system_messages"][sys_msg_key]
+
+    # Create the appropriate sampler instance
+    if sampler_type == "OChatCompletionSampler":
+        return OChatCompletionSampler(**params)
+    elif sampler_type == "ChatCompletionSampler":
+        return ChatCompletionSampler(**params)
+    elif sampler_type == "BedrockCompletionSampler":
+        return BedrockCompletionSampler(**params)
+    elif sampler_type == "GeminiSampler":
+        return GeminiSampler(**params)
+    elif sampler_type == "AIOTSampler":
+        return AIOTSampler(**params)
+
+    raise ValueError(f"Unknown sampler type: {sampler_type}")
+
+def get_evaluator(eval_name: str, test_run: bool, equality_checker: Any, num_threads: int) -> Any:
     """
     Returns an evaluator instance based on the evaluation name.
 
     Args:
         eval_name (str): Name of the evaluation.
-        debug (bool): Debug flag to set the number of examples.
+        test_run (bool): Flag to indicate if this is a test run.
         equality_checker (Any): Sampler used for equality checking in MathEval.
 
     Returns:
@@ -184,7 +172,7 @@ def get_evaluator(eval_name: str, test_run: bool, equality_checker: Any) -> Any:
                 num_examples=num_examples_map["gpqa"],
                 variant="extended",
                 rng_seed=42,
-                num_threads=6,
+                num_threads=num_threads,
             )
         case "mgsm":
             return MGSMEval(num_examples_per_lang=num_examples_map["mgsm"])
@@ -242,11 +230,8 @@ def main() -> List[Dict[str, Any]]:
     setup_logging(args.debug)
     logging.info("Starting evaluation pipeline")
 
-    samplers = get_samplers()
-    equality_checker = ChatCompletionSampler(model="gpt-4-turbo-preview")
-
-    def get_evals(eval_name: str) -> Any:
-        return get_evaluator(eval_name, args.test_run, equality_checker)
+    equality_checker = None
+    # equality_checker = ChatCompletionSampler(model="gpt-4-turbo-preview")
 
     # Example of multiple evaluations (currently commented out)
     # evals = {eval_name: get_evals(eval_name) for eval_name in ["mmlu", "math", "gpqa", "mgsm", "drop"]}
@@ -259,13 +244,13 @@ def main() -> List[Dict[str, Any]]:
     mergekey2resultpath: Dict[str, Path] = {}
 
     model_name = args.model
-    sampler = samplers.get(model_name)
+    sampler = get_sampler(model_name, args.sampler_config)
     if not sampler:
         logging.error(f"Sampler for model '{model_name}' not found.")
         raise ValueError(f"Sampler for model '{model_name}' not found.")
 
     eval_name = "gpqa"  # You can modify this to accept as an argument if needed
-    eval_obj = get_evals(eval_name)
+    eval_obj = get_evaluator(eval_name, args.test_run, equality_checker, args.parallel)
 
     logging.info(f"Running evaluation '{eval_name}' with model '{model_name}'")
     result = eval_obj(sampler)
