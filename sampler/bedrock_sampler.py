@@ -76,7 +76,7 @@ class BedrockCompletionSampler(SamplerBase):
                     full_response_text = response.content[0].text
                 return full_response_text, response.usage.output_tokens
             except RateLimitError as e:
-                exception_backoff = 2**trial  # expontial back off
+                exception_backoff = 2**(trial+3)  # expontial back off
                 print(
                     f"Rate limit exception so wait and retry {trial} after {exception_backoff} sec",
                     e,

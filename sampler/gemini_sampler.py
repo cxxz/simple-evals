@@ -93,7 +93,7 @@ class GeminiSampler(SamplerBase):
                     output_tokens = usage.candidates_token_count + usage.thoughts_token_count
                 return response.text, output_tokens
             except Exception as e:
-                exception_backoff = 2**trial  # exponential back off
+                exception_backoff = 2**(trial+3)  # exponential back off
                 print(
                     f"Rate limit exception so wait and retry {trial} after {exception_backoff} sec",
                     e,
