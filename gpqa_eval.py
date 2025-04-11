@@ -81,7 +81,9 @@ class GPQAEval(Eval):
                 response_text = response
                 response_token_count = 0
             else:
-                raise ValueError(f"Unexpected response type: {type(response)}")
+                response_text = None
+                response_token_count = 0
+                print(f"Unexpected response type: {type(response)}")
             
             if response_text is None:
                 # Handle the case where the response is None

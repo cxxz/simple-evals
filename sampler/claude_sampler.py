@@ -74,7 +74,7 @@ class ClaudeCompletionSampler(SamplerBase):
                 )
                 return message.content[0].text
             except anthropic.RateLimitError as e:
-                exception_backoff = 2**trial  # expontial back off
+                exception_backoff = 6**(trial+1)  # expontial back off
                 print(
                     f"Rate limit exception so wait and retry {trial} after {exception_backoff} sec",
                     e,

@@ -116,7 +116,7 @@ class ChatCompletionSampler(SamplerBase):
                 print("Bad Request Error", e)
                 return ""
             except Exception as e:
-                exception_backoff = 2**(trial+3)  # expontial back off
+                exception_backoff = 6**(trial+1)  # expontial back off
                 print(
                     f"Rate limit exception so wait and retry {trial} after {exception_backoff} sec",
                     e,
