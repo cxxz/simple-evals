@@ -22,7 +22,7 @@ class ChatCompletionSampler(SamplerBase):
 
     def __init__(
         self,
-        model: str = "gpt-3.5-turbo",
+        model: str = "gpt-4o-mini",
         system_message: str | None = None,
         temperature: float = 0.5,
         top_p: float = 1.0,
@@ -32,7 +32,20 @@ class ChatCompletionSampler(SamplerBase):
     ):
         self.timeout = timeout
         if provider == "azure":
-            self.client = AzureOpenAI(timeout=timeout)
+            self.api_key_name = "SE_AZURE_API_KEY"
+            api_key = os.environ.get(self.api_key_name)
+            azure_endpoint = os.environ.get("SE_AZURE_ENDPOINT_URL")
+            api_version = os.environ.get("SE_AZURE_API_VERSION", "2024-12-01-preview")
+            if not api_key or not azure_endpoint:
+                raise ValueError(
+                    f"Please set {self.api_key_name} and SE_AZURE_ENDPOINT_URL environment variables"
+                )
+            self.client = AzureOpenAI(
+                api_key=api_key,
+                azure_endpoint=azure_endpoint,
+                api_version=api_version,
+                timeout=timeout
+                )
         elif provider == "openai":
             self.api_key_name = "SE_OAI_API_KEY"
             api_key = os.environ.get(self.api_key_name)

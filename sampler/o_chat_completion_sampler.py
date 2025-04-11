@@ -3,7 +3,7 @@ import os
 from typing import Any
 
 import openai
-from openai import OpenAI
+from openai import OpenAI, AzureOpenAI
 
 from ..types import MessageList, SamplerBase
 
@@ -17,16 +17,53 @@ class OChatCompletionSampler(SamplerBase):
         self,
         *,
         reasoning_effort: str | None = None,
-        model: str = "o1-mini",
+        model: str = "o3-mini",
         max_retries: int = 3,
+        timeout: int = 120,
+        provider: str = "openai",
     ):
-        self.api_key_name = "SE_OAI_API_KEY"
-        api_key=os.environ.get(self.api_key_name)
-        if api_key is None:
+        self.timeout = timeout
+        if provider == "azure":
+            self.api_key_name = "SE_AZURE_API_KEY"
+            api_key = os.environ.get(self.api_key_name)
+            azure_endpoint = os.environ.get("SE_AZURE_ENDPOINT_URL")
+            api_version = os.environ.get("SE_AZURE_API_VERSION", "2024-12-01-preview")
+            if not api_key or not azure_endpoint:
+                raise ValueError(
+                    f"Please set {self.api_key_name} and SE_AZURE_ENDPOINT_URL environment variables"
+                )
+            self.client = AzureOpenAI(
+                api_key=api_key,
+                azure_endpoint=azure_endpoint,
+                api_version=api_version,
+                timeout=timeout
+                )
+        elif provider == "openai":
+            self.api_key_name = "SE_OAI_API_KEY"
+            api_key = os.environ.get(self.api_key_name)
+            if not api_key:
+                raise ValueError(
+                    f"Please set {self.api_key_name} environment variable"
+                )
+            self.client = OpenAI(
+                api_key=api_key,
+                timeout=timeout)
+        elif provider == "custom":
+            self.api_key_name = "SE_CUSTOM_API_KEY"
+            api_key = os.environ.get(self.api_key_name)
+            base_url = os.environ.get("SE_CUSTOM_API_BASE")
+            if not api_key or not base_url:
+                raise ValueError(
+                    f"Please set {self.api_key_name} and SE_CUSTOM_API_BASE environment variables"
+                )
+            self.client = OpenAI(
+                api_key=api_key,
+                base_url=base_url, 
+                timeout=timeout)
+        else:
             raise ValueError(
-                f"Please set the {self.api_key_name} environment variable to use OpenAI API key."
+                f"Invalid provider '{provider}'. Please use 'openai', 'azure', or 'custom'."
             )
-        self.client = OpenAI(api_key=api_key)
         self.model = model
         self.image_format = "url"
         self.reasoning_effort = reasoning_effort
