@@ -178,6 +178,7 @@ def get_evaluator(eval_name: str, test_run: bool, equality_checker: Any, num_thr
                 n_repeats=1,
                 num_examples=num_examples_map["gpqa"],
                 variant="extended",
+                #variant="diamond",
                 rng_seed=42,
                 num_threads=num_threads,
             )
