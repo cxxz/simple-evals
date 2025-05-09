@@ -16,13 +16,14 @@ from .gpqa_eval import GPQAEval
 from .math_eval import MathEval
 from .mgsm_eval import MGSMEval
 from .mmlu_eval import MMLUEval
+from .arc_eval import ArcEval
 from .sampler.chat_completion_sampler import ChatCompletionSampler
 from .sampler.o_chat_completion_sampler import OChatCompletionSampler
 from .sampler.gemini_sampler import GeminiSampler
 from .sampler.aiot_sampler import AIOTSampler
 from .sampler.bedrock_sampler import BedrockCompletionSampler
 
-SUPPORTED_BENCHMARKS = ["mmlu", "math", "gpqa", "mgsm", "drop"]
+SUPPORTED_BENCHMARKS = ["mmlu", "math", "gpqa_diamond", "gpqa_extended", "mgsm", "drop", "arc"]
 
 def setup_logging(debug: bool) -> None:
     """
@@ -92,8 +93,8 @@ def parse_arguments() -> argparse.Namespace:
         "-b",
         "--benchmark",
         type=str,
-        default="gpqa",
-        help='Name of the benchmark to run (options: "mmlu", "math", "gpqa", "mgsm", "drop"; default: "gpqa")',
+        default="gpqa_diamond",
+        help='Name of the benchmark to run (options: "mmlu", "math", "gpqa_diamond", "gpqa_extended", "mgsm", "drop", "arc"; default: "gpqa_diamond")',
     )
     return parser.parse_args()
 
@@ -160,12 +161,16 @@ def get_evaluator(eval_name: str, test_run: bool, equality_checker: Any, num_thr
     Raises:
         ValueError: If the evaluation type is unrecognized.
     """
+    if eval_name.startswith("gpqa_"):
+        eval_name, benchmark_variant = eval_name.split("_")
+
     num_examples_map = {
         "mmlu": 1 if test_run else 2500,
         "math": 5 if test_run else 2500,
         "gpqa": 5 if test_run else None,
         "mgsm": 10 if test_run else 250,
         "drop": 10 if test_run else 2000,
+        "arc": 5 if test_run else None,
     }
 
     match eval_name:
@@ -177,8 +182,7 @@ def get_evaluator(eval_name: str, test_run: bool, equality_checker: Any, num_thr
             return GPQAEval(
                 n_repeats=1,
                 num_examples=num_examples_map["gpqa"],
-                variant="extended",
-                #variant="diamond",
+                variant=benchmark_variant,
                 rng_seed=42,
                 num_threads=num_threads,
             )
@@ -188,6 +192,11 @@ def get_evaluator(eval_name: str, test_run: bool, equality_checker: Any, num_thr
             return DropEval(
                 num_examples=num_examples_map["drop"],
                 train_samples_per_prompt=3,
+            )
+        case "arc":
+            return ArcEval(
+                num_examples=num_examples_map["arc"],
+                num_threads=num_threads,
             )
         case _:
             raise ValueError(f"Unrecognized evaluation type: {eval_name}")
