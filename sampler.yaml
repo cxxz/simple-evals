@@ -30,6 +30,7 @@ deepseek-r1:
   sampler_type: ChatCompletionSampler
   params:
     model: DeepSeek-R1-AWQ
+    provider: custom
     max_tokens: 28000
     temperature: 0.6
     top_p: 0.95
@@ -42,17 +43,17 @@ gpt-4o-2024-11-20:
     max_tokens: 4096
     provider: azure
 
-gemini-2.0-flash:
+gemini-2.5-flash:
   sampler_type: GeminiSampler
   params:
-    model_name: gemini-2.0-flash-001
-    max_tokens: 8192
+    model_name: gemini-2.5-flash-preview-04-17
+    max_tokens: 32768
     provider: vertex_ai
 
 gemini-2.5-pro:
   sampler_type: GeminiSampler
   params:
-    model_name: gemini-2.5-pro-preview-03-25
+    model_name: gemini-2.5-pro-preview-05-06
     temperature: 0.9
     max_tokens: 32768
     provider: gemini
