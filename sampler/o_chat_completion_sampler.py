@@ -90,11 +90,17 @@ class OChatCompletionSampler(SamplerBase):
         trial = 0
         while trial < self.max_retries:
             try:
-                response = self.client.chat.completions.create(
-                    model=self.model,
-                    messages=message_list,
-                    reasoning_effort=self.reasoning_effort,
-                )
+                if self.model.startswith("o1"):
+                    response = self.client.chat.completions.create(
+                        model=self.model,
+                        messages=message_list,
+                    )
+                else:
+                    response = self.client.chat.completions.create(
+                        model=self.model,
+                        messages=message_list,
+                        reasoning_effort=self.reasoning_effort,
+                    )
                 return response.choices[0].message.content, response.usage.completion_tokens
             # NOTE: BadRequestError is triggered once for MMMU, please uncomment if you are reruning MMMU
             except openai.BadRequestError as e:

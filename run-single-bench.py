@@ -13,6 +13,7 @@ import pandas as pd
 from .common import make_report
 from .drop_eval import DropEval
 from .gpqa_eval import GPQAEval
+from .supergpqa_eval import SuperGPQAEval
 from .math_eval import MathEval
 from .mgsm_eval import MGSMEval
 from .mmlu_eval import MMLUEval
@@ -23,7 +24,7 @@ from .sampler.gemini_sampler import GeminiSampler
 from .sampler.aiot_sampler import AIOTSampler
 from .sampler.bedrock_sampler import BedrockCompletionSampler
 
-SUPPORTED_BENCHMARKS = ["mmlu", "math", "gpqa_diamond", "gpqa_extended", "mgsm", "drop", "arc"]
+SUPPORTED_BENCHMARKS = ["mmlu", "math", "supergpqa", "gpqa_diamond", "gpqa_extended", "mgsm", "drop", "arc"]
 
 def setup_logging(debug: bool) -> None:
     """
@@ -94,7 +95,7 @@ def parse_arguments() -> argparse.Namespace:
         "--benchmark",
         type=str,
         default="gpqa_diamond",
-        help='Name of the benchmark to run (options: "mmlu", "math", "gpqa_diamond", "gpqa_extended", "mgsm", "drop", "arc"; default: "gpqa_diamond")',
+        help='Name of the benchmark to run (options: "mmlu", "math", "gpqa_diamond", "gpqa_extended", "supergpqa", "mgsm", "drop", "arc"; default: "gpqa_diamond")',
     )
     return parser.parse_args()
 
@@ -171,6 +172,7 @@ def get_evaluator(eval_name: str, test_run: bool, equality_checker: Any, num_thr
         "mgsm": 10 if test_run else 250,
         "drop": 10 if test_run else 2000,
         "arc": 5 if test_run else None,
+        "supergpqa": 5 if test_run else None,
     }
 
     match eval_name:
@@ -196,6 +198,11 @@ def get_evaluator(eval_name: str, test_run: bool, equality_checker: Any, num_thr
         case "arc":
             return ArcEval(
                 num_examples=num_examples_map["arc"],
+                num_threads=num_threads,
+            )
+        case "supergpqa":
+            return SuperGPQAEval(
+                num_examples=num_examples_map["supergpqa"],
                 num_threads=num_threads,
             )
         case _:
