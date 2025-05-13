@@ -22,19 +22,24 @@ from .common import (
 )
 from .types import Eval, EvalResult, SamplerBase, SingleEvalResult
 
-config2category = {
-    "ARC-Challenge": "challenge",
-    "ARC-Easy": "easy",
+SUPERGPQA_SUBFIELD_MAPPING = {
+    "mb": "Biochemistry_and_Molecular_Biology",
+    "hep": "Particle_and_Nuclear_Physics",
 }
 
 
 class SuperGPQAEval(Eval):
     def __init__(
         self,
+        variant: str = "mb",
         num_examples: int | None = None,
         num_threads: int = 6,
        ):
-        url = 'https://raw.githubusercontent.com/cxxz/public-files/refs/heads/main/datasets/SuperGPQA_Biochemistry_and_Molecular_Biology.csv'
+        subfield = SUPERGPQA_SUBFIELD_MAPPING.get(variant)
+        if subfield is None:
+            raise ValueError(f"Invalid variant: {variant}. Must be one of {list(SUPERGPQA_SUBFIELD_MAPPING.keys())}.")
+        # Load the dataset from the URL
+        url = f'https://raw.githubusercontent.com/cxxz/public-files/refs/heads/main/datasets/SuperGPQA_{subfield}.csv'
         df = pandas.read_csv(url)
         examples = [row.to_dict() for _, row in df.iterrows()]
         if num_examples:

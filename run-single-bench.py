@@ -95,7 +95,7 @@ def parse_arguments() -> argparse.Namespace:
         "--benchmark",
         type=str,
         default="gpqa_diamond",
-        help='Name of the benchmark to run (options: "mmlu", "math", "gpqa_diamond", "gpqa_extended", "supergpqa", "mgsm", "drop", "arc"; default: "gpqa_diamond")',
+        help='Name of the benchmark to run (options: "mmlu", "math", "gpqa_diamond", "gpqa_extended", "supergpqa_mb", "supergpqa_hep", "mgsm", "drop", "arc"; default: "gpqa_diamond")',
     )
     return parser.parse_args()
 
@@ -162,9 +162,9 @@ def get_evaluator(eval_name: str, test_run: bool, equality_checker: Any, num_thr
     Raises:
         ValueError: If the evaluation type is unrecognized.
     """
-    if eval_name.startswith("gpqa_"):
+    if "gpqa_" in eval_name:
         eval_name, benchmark_variant = eval_name.split("_")
-
+    
     num_examples_map = {
         "mmlu": 1 if test_run else 2500,
         "math": 5 if test_run else 2500,
@@ -203,6 +203,7 @@ def get_evaluator(eval_name: str, test_run: bool, equality_checker: Any, num_thr
         case "supergpqa":
             return SuperGPQAEval(
                 num_examples=num_examples_map["supergpqa"],
+                variant=benchmark_variant,
                 num_threads=num_threads,
             )
         case _:
