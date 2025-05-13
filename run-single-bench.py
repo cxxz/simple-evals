@@ -24,7 +24,7 @@ from .sampler.gemini_sampler import GeminiSampler
 from .sampler.aiot_sampler import AIOTSampler
 from .sampler.bedrock_sampler import BedrockCompletionSampler
 
-SUPPORTED_BENCHMARKS = ["mmlu", "math", "supergpqa", "gpqa_diamond", "gpqa_extended", "mgsm", "drop", "arc"]
+SUPPORTED_BENCHMARKS = ["mmlu", "math", "supergpqa_mb", "supergpqa_hep", "gpqa_diamond", "gpqa_extended", "mgsm", "drop", "arc"]
 
 def setup_logging(debug: bool) -> None:
     """
