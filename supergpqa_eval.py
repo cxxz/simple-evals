@@ -98,12 +98,16 @@ class SuperGPQAEval(Eval):
             else:
                 # get the final line of the response
                 lines = response_text.split("\n")
-                if len(lines) > 0:
+
+                if lines:
                     last_line = lines[-1]
-                    # the last line sometimes can be like this "The final answer is $\boxed{C}$." and we want to extract the C
-                    match = re.search(r"\$\boxed{(.*?)}\$", last_line)
+                    # print("last_line:", last_line)
+                    # match a literal “$\boxed{…}$”
+                    match = re.search(r"\$\\boxed\{(.*?)\}\$", last_line)
+                    # print("match:", match)
                     if match:
                         extracted_answer = match.group(1)
+                        # print("extracted_answer:", extracted_answer)
 
             score = 1.0 if extracted_answer == correct_answer else 0.0
             html = common.jinja_env.from_string(HTML_JINJA).render(
