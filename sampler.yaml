@@ -3,6 +3,22 @@
 # - sampler_type: The type of sampler class to use
 # - params: Parameters to pass to the sampler constructor
 
+claude-3-7-sonnet:
+  sampler_type: BedrockCompletionSampler
+  params:
+    model: us.anthropic.claude-3-7-sonnet-20250219-v1:0
+    system_message: SIMPLE_GPQA_SYS_MSG
+    max_tokens: 8192
+
+claude-3-7-sonnet-extended-thinking:
+  sampler_type: BedrockCompletionSampler
+  params:
+    model: us.anthropic.claude-3-7-sonnet-20250219-v1:0
+    enable_extended_thinking: true
+    budget_tokens: 16000
+    system_message: SCIENCE_SYS_MSG
+    max_tokens: 21000
+
 o3-mini-high:
   sampler_type: OChatCompletionSampler
   params:
@@ -56,7 +72,7 @@ gemini-2.5-pro:
     model_name: gemini-2.5-pro-preview-05-06
     temperature: 0.9
     max_tokens: 32768
-    provider: gemini
+    provider: vertex_ai
 
 # System messages referenced by multiple models
 system_messages:
