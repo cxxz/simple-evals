@@ -172,7 +172,7 @@ def get_evaluator(eval_name: str, test_run: bool, equality_checker: Any, num_thr
         "mgsm": 10 if test_run else 250,
         "drop": 10 if test_run else 2000,
         "arc": 5 if test_run else None,
-        "supergpqa": 5 if test_run else None,
+        "supergpqa": 10 if test_run else None,
     }
 
     match eval_name:

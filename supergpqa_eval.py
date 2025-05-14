@@ -92,7 +92,19 @@ class SuperGPQAEval(Eval):
                     extracted_answer=None
                 )
             match = re.search(ANSWER_PATTERN_MULTICHOICE, response_text)
-            extracted_answer = match.group(1) if match else None
+            extracted_answer = None
+            if match:
+                extracted_answer = match.group(1) 
+            else:
+                # get the final line of the response
+                lines = response_text.split("\n")
+                if len(lines) > 0:
+                    last_line = lines[-1]
+                    # the last line sometimes can be like this "The final answer is $\boxed{C}$." and we want to extract the C
+                    match = re.search(r"\$\boxed{(.*?)}\$", last_line)
+                    if match:
+                        extracted_answer = match.group(1)
+
             score = 1.0 if extracted_answer == correct_answer else 0.0
             html = common.jinja_env.from_string(HTML_JINJA).render(
                 prompt_messages=prompt_messages,
