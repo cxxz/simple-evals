@@ -3,17 +3,17 @@
 # - sampler_type: The type of sampler class to use
 # - params: Parameters to pass to the sampler constructor
 
-claude-3-7-sonnet:
+claude-4-sonnet:
   sampler_type: BedrockCompletionSampler
   params:
-    model: us.anthropic.claude-3-7-sonnet-20250219-v1:0
+    model: us.anthropic.claude-sonnet-4-20250514-v1:0
     system_message: SIMPLE_GPQA_SYS_MSG
     max_tokens: 8192
 
-claude-3-7-sonnet-extended-thinking:
+claude-4-sonnet-extended-thinking:
   sampler_type: BedrockCompletionSampler
   params:
-    model: us.anthropic.claude-3-7-sonnet-20250219-v1:0
+    model: us.anthropic.claude-sonnet-4-20250514-v1:0
     enable_extended_thinking: true
     budget_tokens: 16000
     system_message: SCIENCE_SYS_MSG
@@ -45,24 +45,24 @@ gpt-4o-mini:
 deepseek-r1:
   sampler_type: ChatCompletionSampler
   params:
-    model: DeepSeek-R1-AWQ
+    model: DeepSeek-R1-0528
     provider: custom
     max_tokens: 28000
     temperature: 0.6
     top_p: 0.95
     timeout: 1800
 
-gpt-4o-2024-11-20:
+gpt-4.1:
   sampler_type: ChatCompletionSampler
   params:
-    model: gpt-4o
+    model: gpt-4.1
     max_tokens: 4096
     provider: azure
 
 gemini-2.5-flash:
   sampler_type: GeminiSampler
   params:
-    model_name: gemini-2.5-flash-preview-04-17
+    model_name: gemini-2.5-flash-preview-05-20
     max_tokens: 32768
     provider: vertex_ai
 
