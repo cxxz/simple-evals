@@ -62,17 +62,19 @@ gpt-4.1:
 gemini-2.5-flash:
   sampler_type: GeminiSampler
   params:
-    model_name: gemini-2.5-flash-preview-05-20
+    model_name: gemini-2.5-flash
     max_tokens: 32768
-    provider: vertex_ai
+    provider: gemini
+    #provider: vertex_ai
 
 gemini-2.5-pro:
   sampler_type: GeminiSampler
   params:
-    model_name: gemini-2.5-pro-preview-05-06
+    model_name: gemini-2.5-pro
     temperature: 0.9
     max_tokens: 32768
-    provider: vertex_ai
+    provider: gemini
+    #provider: vertex_ai
 
 # System messages referenced by multiple models
 system_messages:

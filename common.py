@@ -57,6 +57,13 @@ D) {D}
 Answer (A/B/C/D/Uncertain):
 """.strip()
 
+QUERY_TEMPLATE_OEQ = """
+Answer the following scientific question. The last line of your response should follow the following format: 'Answer: <your-final-answer>' (without quotes) where <your-final-answer> is your final answer to the question. Think step by step before answering.
+
+{Question}
+
+""".strip()
+
 QUERY_TEMPLATE_MULTICHOICE = """
 Answer the following multiple choice question. The last line of your response should be of the following format: 'Answer: <LETTER>' (without quotes) where <LETTER> is one of ABCD. Think step by step before answering.
 
@@ -70,6 +77,7 @@ D) {D}
 
 # ANSWER_PATTERN_MULTICHOICE = r"(?i)Answer\s*:\s*([A-D])"
 ANSWER_PATTERN_MULTICHOICE = r"(?i)\**\s*Answer\s*\**:\**\s*([A-J])"
+OEQ_ANSWER_PATTERN = r"(?i)Answer\s*:\s*([^\n]+)"
 ANSWER_PATTERN = r"(?i)Answer\s*:\s*([^\n]+)"
 MULTILINGUAL_ANSWER_PATTERN_TEMPLATE = (
     "(?i){}\s*([A-D]|[أ-د]|[অ]|[ব]|[ড]|[ঢ]|[Ａ]|[Ｂ]|[Ｃ]|[Ｄ])"
@@ -194,6 +202,8 @@ HTML_JINJA = """
 <p>Score: {{ score }}</p>
 """
 
+def format_oeq_question(question, template=QUERY_TEMPLATE_OEQ):
+    return template.format(Question=question)
 
 def format_multichoice_question(row, template=QUERY_TEMPLATE_MULTICHOICE):
     return template.format(**row)

@@ -13,6 +13,7 @@ import pandas as pd
 from .common import make_report
 from .drop_eval import DropEval
 from .gpqa_eval import GPQAEval
+from .oeq_eval import OEQEval
 from .supergpqa_eval import SuperGPQAEval
 from .math_eval import MathEval
 from .mgsm_eval import MGSMEval
@@ -24,7 +25,7 @@ from .sampler.gemini_sampler import GeminiSampler
 from .sampler.aiot_sampler import AIOTSampler
 from .sampler.bedrock_sampler import BedrockCompletionSampler
 
-SUPPORTED_BENCHMARKS = ["mmlu", "math", "supergpqa_mb", "supergpqa_hep", "gpqa_diamond", "gpqa_extended", "mgsm", "drop", "arc"]
+SUPPORTED_BENCHMARKS = ["mmlu", "math", "supergpqa_mb", "supergpqa_hep", "gpqa_diamond", "gpqa_extended", "mgsm", "drop", "arc", "oeq_gpqa"]
 
 def setup_logging(debug: bool) -> None:
     """
@@ -162,6 +163,10 @@ def get_evaluator(eval_name: str, test_run: bool, equality_checker: Any, num_thr
     Raises:
         ValueError: If the evaluation type is unrecognized.
     """
+    if eval_name.startswith("oeq_"):
+        benchmark_variant = eval_name.split("_")[1]
+        eval_name = "oeq"
+
     if "gpqa_" in eval_name:
         eval_name, benchmark_variant = eval_name.split("_")
     
@@ -169,6 +174,7 @@ def get_evaluator(eval_name: str, test_run: bool, equality_checker: Any, num_thr
         "mmlu": 1 if test_run else 2500,
         "math": 5 if test_run else 2500,
         "gpqa": 5 if test_run else None,
+        "oeq": 5 if test_run else None,
         "mgsm": 10 if test_run else 250,
         "drop": 10 if test_run else 2000,
         "arc": 5 if test_run else None,
@@ -184,6 +190,14 @@ def get_evaluator(eval_name: str, test_run: bool, equality_checker: Any, num_thr
             return GPQAEval(
                 n_repeats=1,
                 num_examples=num_examples_map["gpqa"],
+                variant=benchmark_variant,
+                rng_seed=42,
+                num_threads=num_threads,
+            )
+        case "oeq":
+            return OEQEval(
+                n_repeats=1,
+                num_examples=num_examples_map["oeq"],
                 variant=benchmark_variant,
                 rng_seed=42,
                 num_threads=num_threads,
