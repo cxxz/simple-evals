@@ -25,7 +25,19 @@ from .sampler.gemini_sampler import GeminiSampler
 from .sampler.aiot_sampler import AIOTSampler
 from .sampler.bedrock_sampler import BedrockCompletionSampler
 
-SUPPORTED_BENCHMARKS = ["mmlu", "math", "supergpqa_mb", "supergpqa_hep", "gpqa_diamond", "gpqa_extended", "mgsm", "drop", "arc", "oeq_gpqa"]
+SUPPORTED_BENCHMARKS = [
+    "mmlu",
+    "math", 
+    "supergpqa_mb",
+    "supergpqa_hep",
+    "gpqa_diamond",
+    "gpqa_extended", 
+    "gpqa_scdiamond",
+    "mgsm",
+    "drop",
+    "arc",
+    "oeq_gpqa"
+]
 
 def setup_logging(debug: bool) -> None:
     """
@@ -67,8 +79,8 @@ def parse_arguments() -> argparse.Namespace:
         "-m",
         "--model",
         type=str,
-        default="gpt-4o-mini",
-        help='Specify the model to use (default: "gpt-4o-mini")',
+        default="gpt-4.1-nano",
+        help='Specify the model to use (default: "gpt-4.1-nano")',
     )
     parser.add_argument(
         "-p",

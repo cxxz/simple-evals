@@ -7,8 +7,7 @@ https://arxiv.org/abs/2311.12022
 import random
 import re
 
-import blobfile as bf
-import pandas
+import pandas as pd
 from datasets import load_dataset
 
 from . import common
@@ -26,8 +25,14 @@ class GPQAEval(Eval):
         num_examples: int | None = None,  # restrict to a subset of the data for debugging
         domain: str | None = None,
     ):
-        dataset = load_dataset("idavidrein/gpqa", f"gpqa_{variant}")
-        df = dataset["train"].to_pandas()
+        if variant.startswith("sc"):
+            variant = variant[2:]
+            url = f"https://raw.githubusercontent.com/cxxz/public-files/refs/heads/main/datasets/gpscqa_{variant}.csv"
+            df = pd.read_csv(url)
+        else:
+            dataset = load_dataset("idavidrein/gpqa", f"gpqa_{variant}")
+            df = dataset["train"].to_pandas()
+
         if domain is not None:
             df = df[df.Subdomain == domain]
         examples = [row.to_dict() for _, row in df.iterrows()]

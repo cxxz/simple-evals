@@ -35,12 +35,12 @@ o4-mini-high:
     provider: azure
     timeout: 1200
 
-gpt-4o-mini:
+gpt-4.1-nano:
   sampler_type: ChatCompletionSampler
   params:
-    model: gpt-4o-mini
+    model: gpt-4.1-nano
     system_message: OPENAI_SYSTEM_MESSAGE_API
-    max_tokens: 4096
+    max_tokens: 8192
 
 deepseek-r1:
   sampler_type: ChatCompletionSampler
