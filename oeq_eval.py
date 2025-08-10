@@ -23,13 +23,13 @@ class OEQEval(Eval):
         variant: str = "gpqa",
         rng_seed: int = 17,
         num_threads: int = 6,
-        question_column: str = "open_ended_question",
-        #question_column: str = "open_ended_question_gemini-2.5-pro",
+        #question_column: str = "open_ended_question",
+        question_column: str = "open_ended_question_gemini-2.5-pro",
         # question_column: str = "open_ended_question_gemini-2.5-pro_no_options",
         num_examples: int | None = None,  # restrict to a subset of the data for debugging
         domain: str | None = None,
     ):
-        url = "https://raw.githubusercontent.com/cxxz/public-files/refs/heads/main/datasets/gpqa_diamond_130rows_oeq.csv"
+        url = "https://raw.githubusercontent.com/cxxz/public-files/refs/heads/main/datasets/gpqa_extended_224_oeq.csv"
         df = pd.read_csv(url)
         if domain is not None:
             df = df[df.Subdomain == domain]
